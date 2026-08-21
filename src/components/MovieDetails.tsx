@@ -5,9 +5,10 @@ interface MovieDetailsProps {
   isInWatchlist: boolean
   onBack: () => void
   onToggleWatchlist: () => void
+  onWatchTrailer: () => void
 }
 
-function MovieDetails({ movie, isInWatchlist, onBack, onToggleWatchlist }: MovieDetailsProps) {
+function MovieDetails({ movie, isInWatchlist, onBack, onToggleWatchlist, onWatchTrailer }: MovieDetailsProps) {
   return (
     <section className="mx-auto max-w-7xl px-6 pb-20 lg:px-10">
       <button type="button" onClick={onBack} className="mb-8 text-sm font-bold text-[#f4b942] transition hover:text-[#ffd166]">
@@ -31,6 +32,9 @@ function MovieDetails({ movie, isInWatchlist, onBack, onToggleWatchlist }: Movie
           {movie.runtime && <p className="mt-4 text-sm text-slate-400">Runtime: {movie.runtime} minutes</p>}
           <button type="button" onClick={onToggleWatchlist} aria-pressed={isInWatchlist} className="mt-8 rounded-full bg-[#f4b942] px-6 py-3 font-bold text-[#15120b] transition hover:bg-[#ffd166] focus:outline-none focus-visible:ring-2 focus-visible:ring-white">
             {isInWatchlist ? 'Remove from watchlist' : 'Add to watchlist'}
+          </button>
+          <button type="button" onClick={onWatchTrailer} className="ml-3 mt-8 rounded-full border border-slate-700 px-6 py-3 font-bold text-white transition hover:border-[#f4b942] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#f4b942]">
+            Watch trailer
           </button>
         </div>
       </div>

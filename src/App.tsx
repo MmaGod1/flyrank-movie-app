@@ -290,14 +290,14 @@ function App() {
     }
   }
 
-  async function handleWatchTrailer() {
+  async function handleWatchTrailer(movieId: number) {
     setIsTrailerOpen(true)
     setIsTrailerLoading(true)
     setTrailerUrl(null)
     setTrailerError('')
 
     try {
-      const url = await fetchMovieTrailer(FEATURED_MOVIE_ID)
+      const url = await fetchMovieTrailer(movieId)
       setTrailerUrl(url)
     } catch (error) {
       setTrailerError(error instanceof Error ? error.message : 'We could not load the trailer. Please try again.')
@@ -344,6 +344,7 @@ function App() {
           isInWatchlist={isSelectedMovieSaved}
           onBack={() => setSelectedMovie(null)}
           onToggleWatchlist={handleToggleWatchlist}
+          onWatchTrailer={() => handleWatchTrailer(selectedMovie.id)}
         />
       ) : isDetailsLoading ? (
         <p className="mx-auto max-w-7xl px-6 pb-20 text-center text-slate-400 lg:px-10">Loading movie details...</p>
@@ -354,7 +355,7 @@ function App() {
         </div>
       ) : (
         <>
-          {activeSection === 'discover' && <Hero onWatchTrailer={handleWatchTrailer} />}
+          {activeSection === 'discover' && <Hero onWatchTrailer={() => handleWatchTrailer(FEATURED_MOVIE_ID)} />}
           {activeSection === 'discover' && (
             <MovieSection
               id="trending"

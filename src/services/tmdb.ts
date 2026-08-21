@@ -6,13 +6,22 @@ const TMDB_IMAGE_URL = 'https://image.tmdb.org/t/p/w500'
 interface TmdbMovie {
   id: number
   title: string
-  release_date: string
+  release_date?: string
   vote_average: number
   poster_path: string | null
 }
 
 interface TmdbPopularResponse {
   results: TmdbMovie[]
+}
+
+export interface MovieGenre {
+  id: number
+  name: string
+}
+
+interface TmdbGenreResponse {
+  genres: MovieGenre[]
 }
 
 function mapMovies(movies: TmdbMovie[]): Movie[] {
@@ -46,6 +55,31 @@ async function fetchMovies(endpoint: string): Promise<Movie[]> {
 
 export async function fetchPopularMovies(): Promise<Movie[]> {
   return fetchMovies('/movie/popular?page=1')
+}
+
+export async function fetchTrendingMovies(): Promise<Movie[]> {
+  return fetchMovies('/trending/movie/week')
+}
+
+export async function fetchMovieGenres(): Promise<MovieGenre[]> {
+  const apiKey = import.meta.env.VITE_TMDB_API_KEY
+
+  if (!apiKey || apiKey === 'your_tmdb_api_key_here') {
+    throw new Error('TMDB API key is missing. Add it to your .env file.')
+  }
+
+  const response = await fetch(`${TMDB_API_URL}/genre/movie/list?api_key=${apiKey}&language=en-US`)
+
+  if (!response.ok) {
+    throw new Error('Unable to load movie genres from TMDB.')
+  }
+
+  const data: TmdbGenreResponse = await response.json()
+  return data.genres
+}
+
+export async function fetchMoviesByGenre(genreId: number): Promise<Movie[]> {
+  return fetchMovies(`/discover/movie?with_genres=${genreId}&sort_by=popularity.desc&page=1`)
 }
 
 export async function searchMovies(query: string): Promise<Movie[]> {

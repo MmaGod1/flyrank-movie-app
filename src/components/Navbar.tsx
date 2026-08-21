@@ -1,4 +1,4 @@
-import type { ChangeEvent, FormEvent } from 'react'
+import { useState, type ChangeEvent, type FormEvent } from 'react'
 
 interface NavbarProps {
   searchText: string
@@ -11,10 +11,16 @@ interface NavbarProps {
 }
 
 function Navbar({ searchText, onSearchTextChange, onSearch, onClearSearch, onDiscover, onPopular, onWatchlist }: NavbarProps) {
+  const [isMenuOpen, setIsMenuOpen] = useState(false)
 
   function handleSearch(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     onSearch(searchText.trim())
+  }
+
+  function handleNavigation(navigate: () => void) {
+    navigate()
+    setIsMenuOpen(false)
   }
 
   return (
@@ -24,14 +30,25 @@ function Navbar({ searchText, onSearchTextChange, onSearch, onClearSearch, onDis
           FLY<span className="text-[#f4b942]">RANK</span>
         </a>
         <div className="hidden gap-8 text-sm text-slate-300 md:flex">
-          <a href="#top" onClick={onDiscover} className="text-white">Discover</a>
-          <a href="#popular" onClick={onPopular} className="transition hover:text-white">Popular</a>
-          <a href="#watchlist" onClick={onWatchlist} className="transition hover:text-white">My watchlist</a>
+          <button type="button" onClick={onDiscover} className="text-white">Discover</button>
+          <button type="button" onClick={onPopular} className="transition hover:text-white">Popular</button>
+          <button type="button" onClick={onWatchlist} className="transition hover:text-white">My watchlist</button>
         </div>
+        <button type="button" onClick={() => setIsMenuOpen(!isMenuOpen)} className="text-sm text-slate-300 md:hidden" aria-expanded={isMenuOpen}>
+          {isMenuOpen ? 'Close' : 'Menu'}
+        </button>
         <button className="rounded-full border border-slate-700 px-4 py-2 text-sm font-medium transition hover:border-[#f4b942]">
           Sign in
         </button>
       </div>
+
+      {isMenuOpen && (
+        <div className="flex w-full flex-col gap-3 border-t border-slate-800 pt-4 text-sm text-slate-300 md:hidden">
+          <button type="button" onClick={() => handleNavigation(onDiscover)} className="text-left">Discover</button>
+          <button type="button" onClick={() => handleNavigation(onPopular)} className="text-left">Popular</button>
+          <button type="button" onClick={() => handleNavigation(onWatchlist)} className="text-left">My watchlist</button>
+        </div>
+      )}
 
       <form onSubmit={handleSearch} className="mx-auto flex w-full max-w-2xl">
         <label htmlFor="movie-search" className="sr-only">Search for a movie</label>

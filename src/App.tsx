@@ -1,12 +1,14 @@
 import { useEffect, useState } from 'react'
 import type { ChangeEvent } from 'react'
 import Hero from './components/Hero'
+import GenreBrowser from './components/GenreBrowser'
 import MovieDetails from './components/MovieDetails'
-import MovieCard, { type Movie } from './components/MovieCard'
+import type { Movie } from './components/MovieCard'
+import MovieSection from './components/MovieSection'
 import Navbar from './components/Navbar'
-import { fetchMovieDetails, fetchPopularMovies, searchMovies, type MovieDetails as MovieDetailsData } from './services/tmdb'
+import { fetchMovieDetails, fetchMovieGenres, fetchMoviesByGenre, fetchPopularMovies, fetchTrendingMovies, searchMovies, type MovieDetails as MovieDetailsData, type MovieGenre } from './services/tmdb'
 
-type AppSection = 'discover' | 'popular' | 'watchlist'
+type AppSection = 'discover' | 'popular' | 'genre' | 'watchlist'
 
 function App() {
   const [searchText, setSearchText] = useState('')
@@ -14,6 +16,16 @@ function App() {
   const [isLoading, setIsLoading] = useState(true)
   const [errorMessage, setErrorMessage] = useState('')
   const [isSearchActive, setIsSearchActive] = useState(false)
+  const [trendingMovies, setTrendingMovies] = useState<Movie[]>([])
+  const [isTrendingLoading, setIsTrendingLoading] = useState(true)
+  const [trendingError, setTrendingError] = useState('')
+  const [genres, setGenres] = useState<MovieGenre[]>([])
+  const [isGenresLoading, setIsGenresLoading] = useState(true)
+  const [genresError, setGenresError] = useState('')
+  const [selectedGenre, setSelectedGenre] = useState<MovieGenre | null>(null)
+  const [genreMovies, setGenreMovies] = useState<Movie[]>([])
+  const [isGenreLoading, setIsGenreLoading] = useState(false)
+  const [genreError, setGenreError] = useState('')
   const [activeSection, setActiveSection] = useState<AppSection>('discover')
   const [selectedMovie, setSelectedMovie] = useState<MovieDetailsData | null>(null)
   const [isDetailsLoading, setIsDetailsLoading] = useState(false)
@@ -61,6 +73,31 @@ function App() {
     }
 
     loadPopularMovies()
+
+    async function loadTrending() {
+      try {
+        const trending = await fetchTrendingMovies()
+        setTrendingMovies(trending)
+      } catch (error) {
+        setTrendingError(error instanceof Error ? error.message : 'Unable to load discovery data.')
+      } finally {
+        setIsTrendingLoading(false)
+      }
+    }
+
+    async function loadGenres() {
+      try {
+        const movieGenres = await fetchMovieGenres()
+        setGenres(movieGenres)
+      } catch (error) {
+        setGenresError(error instanceof Error ? error.message : 'Unable to load genres.')
+      } finally {
+        setIsGenresLoading(false)
+      }
+    }
+
+    loadTrending()
+    loadGenres()
   }, [])
 
   function handleSearch(query: string) {
@@ -101,6 +138,29 @@ function App() {
   function handleShowWatchlist() {
     setActiveSection('watchlist')
     setSelectedMovie(null)
+  }
+
+  async function handleSelectGenre(genre: MovieGenre) {
+    setSelectedGenre(genre)
+    setActiveSection('genre')
+    setIsGenreLoading(true)
+    setGenreError('')
+
+    try {
+      const nextMovies = await fetchMoviesByGenre(genre.id)
+      setGenreMovies(nextMovies)
+    } catch (error) {
+      setGenreError(error instanceof Error ? error.message : 'Unable to load movies for this genre.')
+    } finally {
+      setIsGenreLoading(false)
+    }
+  }
+
+  function handleClearGenre() {
+    setSelectedGenre(null)
+    setActiveSection('discover')
+    setGenreMovies([])
+    setGenreError('')
   }
 
   async function handleSelectMovie(movie: Movie) {
@@ -157,32 +217,73 @@ function App() {
       ) : (
         <>
           {activeSection === 'discover' && <Hero />}
-      <section id="popular" className="mx-auto max-w-7xl px-6 pb-20 lg:px-10">
-        <div className="mb-7 flex items-end justify-between">
-          <div>
-            <p className="mb-2 text-sm uppercase tracking-[0.2em] text-slate-500">Browse now</p>
-            <h2 className="font-['Space_Grotesk'] text-3xl font-bold">
-              {activeSection === 'watchlist' ? 'My watchlist' : isSearchActive ? 'Search results' : 'Popular movies'}
-            </h2>
-          </div>
-          <button className="text-sm font-bold text-[#f4b942] transition hover:text-[#ffd166]">View all</button>
-        </div>
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-          {activeSection === 'watchlist' ? (
-            moviesToDisplay.length > 0 ? moviesToDisplay.map((movie) => <MovieCard key={movie.id} movie={movie} onSelect={handleSelectMovie} />) : (
-              <p className="col-span-full text-center text-slate-400">Your watchlist is empty</p>
-            )
-          ) : isLoading ? (
-            <p className="col-span-full text-center text-slate-400">Loading movies...</p>
-          ) : errorMessage ? (
-            <p className="col-span-full text-center text-red-300">{errorMessage}</p>
-          ) : moviesToDisplay.length > 0 ? (
-            moviesToDisplay.map((movie) => <MovieCard key={movie.id} movie={movie} onSelect={handleSelectMovie} />)
-          ) : (
-            <p className="col-span-full text-center text-slate-400">No movies found</p>
+          {activeSection === 'discover' && (
+            <MovieSection
+              id="trending"
+              title="Trending This Week"
+              movies={trendingMovies}
+              isLoading={isTrendingLoading}
+              errorMessage={trendingError}
+              onSelect={handleSelectMovie}
+            />
           )}
-        </div>
-      </section>
+          {activeSection === 'discover' && (
+            <MovieSection
+              id="popular"
+              title="Popular Movies"
+              movies={movies}
+              isLoading={isLoading}
+              errorMessage={errorMessage}
+              onSelect={handleSelectMovie}
+            />
+          )}
+          {activeSection === 'genre' && selectedGenre && (
+            <MovieSection
+              title={`${selectedGenre.name} Movies`}
+              movies={genreMovies}
+              isLoading={isGenreLoading}
+              errorMessage={genreError}
+              onSelect={handleSelectMovie}
+            />
+          )}
+          {activeSection === 'popular' && (
+            <MovieSection
+              id="popular"
+              title={isSearchActive ? 'Search Results' : 'Popular Movies'}
+              movies={movies}
+              isLoading={isLoading}
+              errorMessage={errorMessage}
+              onSelect={handleSelectMovie}
+            />
+          )}
+          {activeSection === 'watchlist' && (
+            <MovieSection
+              title="My Watchlist"
+              movies={moviesToDisplay}
+              emptyMessage="Your watchlist is empty"
+              onSelect={handleSelectMovie}
+            />
+          )}
+          {activeSection === 'discover' && (
+            <GenreBrowser
+              genres={genres}
+              isLoading={isGenresLoading}
+              errorMessage={genresError}
+              selectedGenreId={selectedGenre?.id ?? null}
+              onSelectGenre={handleSelectGenre}
+              onClearGenre={handleClearGenre}
+            />
+          )}
+          {activeSection === 'genre' && (
+            <GenreBrowser
+              genres={genres}
+              isLoading={isGenresLoading}
+              errorMessage={genresError}
+              selectedGenreId={selectedGenre?.id ?? null}
+              onSelectGenre={handleSelectGenre}
+              onClearGenre={handleClearGenre}
+            />
+          )}
         </>
       )}
     </main>

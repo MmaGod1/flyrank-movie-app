@@ -4,12 +4,13 @@ interface GenreBrowserProps {
   genres: MovieGenre[]
   isLoading: boolean
   errorMessage: string
+  onRetry: () => void
   selectedGenreId: number | null
   onSelectGenre: (genre: MovieGenre) => void
   onClearGenre: () => void
 }
 
-function GenreBrowser({ genres, isLoading, errorMessage, selectedGenreId, onSelectGenre, onClearGenre }: GenreBrowserProps) {
+function GenreBrowser({ genres, isLoading, errorMessage, onRetry, selectedGenreId, onSelectGenre, onClearGenre }: GenreBrowserProps) {
   return (
     <section id="genres" className="mx-auto max-w-7xl px-6 pb-20 lg:px-10">
       <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
@@ -27,7 +28,10 @@ function GenreBrowser({ genres, isLoading, errorMessage, selectedGenreId, onSele
         {isLoading ? (
           <p className="text-sm text-slate-400">Loading genres...</p>
         ) : errorMessage ? (
-          <p className="text-sm text-red-300">{errorMessage}</p>
+          <div className="flex items-center gap-4">
+            <p className="text-sm text-red-300">{errorMessage}</p>
+            <button type="button" onClick={onRetry} className="text-sm font-bold text-white underline underline-offset-4 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#f4b942]">Try again</button>
+          </div>
         ) : genres.map((genre) => (
           <button
             type="button"

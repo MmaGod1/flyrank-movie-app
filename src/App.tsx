@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { ChangeEvent } from 'react'
 import Hero from './components/Hero'
 import GenreBrowser from './components/GenreBrowser'
@@ -6,9 +6,18 @@ import MovieDetails from './components/MovieDetails'
 import type { Movie } from './components/MovieCard'
 import MovieSection from './components/MovieSection'
 import Navbar from './components/Navbar'
-import { fetchMovieDetails, fetchMovieGenres, fetchMoviesByGenrePage, fetchPopularMovies, fetchPopularMoviesPage, fetchTrendingMovies, searchMoviesPage, type MovieDetails as MovieDetailsData, type MovieGenre } from './services/tmdb'
+import TrailerModal from './components/TrailerModal'
+import { fetchMovieDetails, fetchMovieGenres, fetchMovieTrailer, fetchMoviesByGenrePage, fetchPopularMoviesPage, fetchTrendingMovies, searchMoviesPage, type MovieDetails as MovieDetailsData, type MovieGenre } from './services/tmdb'
 
 type AppSection = 'discover' | 'popular' | 'genre' | 'watchlist'
+const FEATURED_MOVIE_ID = 693134
+
+function isMovie(value: unknown): value is Movie {
+  if (!value || typeof value !== 'object') return false
+
+  const movie = value as Partial<Movie>
+  return typeof movie.id === 'number' && typeof movie.title === 'string' && typeof movie.image === 'string'
+}
 
 function App() {
   const [searchText, setSearchText] = useState('')
@@ -41,29 +50,88 @@ function App() {
   const [selectedMovieId, setSelectedMovieId] = useState<number | null>(null)
   const [isDetailsLoading, setIsDetailsLoading] = useState(false)
   const [detailsError, setDetailsError] = useState('')
+  const [isTrailerOpen, setIsTrailerOpen] = useState(false)
+  const [isTrailerLoading, setIsTrailerLoading] = useState(false)
+  const [trailerUrl, setTrailerUrl] = useState<string | null>(null)
+  const [trailerError, setTrailerError] = useState('')
   const [watchlist, setWatchlist] = useState<Movie[]>(() => {
     const savedMovies = localStorage.getItem('flyrank-watchlist')
 
     if (!savedMovies) return []
 
     try {
-      return JSON.parse(savedMovies) as Movie[]
+      const parsedMovies: unknown = JSON.parse(savedMovies)
+      return Array.isArray(parsedMovies) ? parsedMovies.filter(isMovie) : []
     } catch {
       return []
     }
   })
+  const requestId = useRef(0)
+  const hasLoadedDiscovery = useRef(false)
 
-  async function loadMovies(movieRequest: () => Promise<Movie[]>) {
+  async function loadPopularMovies() {
+    const currentRequestId = ++requestId.current
     setIsLoading(true)
     setErrorMessage('')
 
     try {
-      const nextMovies = await movieRequest()
-      setMovies(nextMovies)
+      const result = await fetchPopularMoviesPage(1)
+      if (currentRequestId !== requestId.current) return
+      setMovies(result.movies)
+      setPopularPage(result.page)
+      setPopularTotalPages(result.totalPages)
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : 'Something went wrong.')
+      if (currentRequestId === requestId.current) {
+        setErrorMessage(error instanceof Error ? error.message : 'We could not load movies. Please try again.')
+      }
     } finally {
-      setIsLoading(false)
+      if (currentRequestId === requestId.current) setIsLoading(false)
+    }
+  }
+
+  async function loadSearchResults(query: string) {
+    const currentRequestId = ++requestId.current
+    setIsLoading(true)
+    setErrorMessage('')
+
+    try {
+      const result = await searchMoviesPage(query, 1)
+      if (currentRequestId !== requestId.current) return
+      setMovies(result.movies)
+      setSearchPage(result.page)
+      setSearchTotalPages(result.totalPages)
+    } catch (error) {
+      if (currentRequestId === requestId.current) {
+        setErrorMessage(error instanceof Error ? error.message : 'We could not search movies. Please try again.')
+      }
+    } finally {
+      if (currentRequestId === requestId.current) setIsLoading(false)
+    }
+  }
+
+  async function loadTrendingMovies() {
+    setIsTrendingLoading(true)
+    setTrendingError('')
+
+    try {
+      setTrendingMovies(await fetchTrendingMovies())
+    } catch (error) {
+      setTrendingError(error instanceof Error ? error.message : 'We could not load trending movies. Please try again.')
+    } finally {
+      setIsTrendingLoading(false)
+    }
+  }
+
+  async function loadGenres() {
+    setIsGenresLoading(true)
+    setGenresError('')
+
+    try {
+      setGenres(await fetchMovieGenres())
+    } catch (error) {
+      setGenresError(error instanceof Error ? error.message : 'We could not load genres. Please try again.')
+    } finally {
+      setIsGenresLoading(false)
     }
   }
 
@@ -72,44 +140,12 @@ function App() {
   }, [watchlist])
 
   useEffect(() => {
-    async function loadPopularMovies() {
-      try {
-        const popularMovies = await fetchPopularMoviesPage(1)
-        setMovies(popularMovies.movies)
-        setPopularPage(popularMovies.page)
-        setPopularTotalPages(popularMovies.totalPages)
-      } catch (error) {
-        setErrorMessage(error instanceof Error ? error.message : 'Something went wrong.')
-      } finally {
-        setIsLoading(false)
-      }
-    }
+    if (hasLoadedDiscovery.current) return
+    hasLoadedDiscovery.current = true
 
     loadPopularMovies()
 
-    async function loadTrending() {
-      try {
-        const trending = await fetchTrendingMovies()
-        setTrendingMovies(trending)
-      } catch (error) {
-        setTrendingError(error instanceof Error ? error.message : 'Unable to load discovery data.')
-      } finally {
-        setIsTrendingLoading(false)
-      }
-    }
-
-    async function loadGenres() {
-      try {
-        const movieGenres = await fetchMovieGenres()
-        setGenres(movieGenres)
-      } catch (error) {
-        setGenresError(error instanceof Error ? error.message : 'Unable to load genres.')
-      } finally {
-        setIsGenresLoading(false)
-      }
-    }
-
-    loadTrending()
+    loadTrendingMovies()
     loadGenres()
   }, [])
 
@@ -124,16 +160,7 @@ function App() {
     setSearchPage(1)
     setActiveSection('popular')
     setSelectedMovie(null)
-    setIsLoading(true)
-    setErrorMessage('')
-    searchMoviesPage(query, 1)
-      .then((result) => {
-        setMovies(result.movies)
-        setSearchPage(result.page)
-        setSearchTotalPages(result.totalPages)
-      })
-      .catch((error: unknown) => setErrorMessage(error instanceof Error ? error.message : 'Unable to search movies.'))
-      .finally(() => setIsLoading(false))
+    loadSearchResults(query)
   }
 
   function handleClearSearch() {
@@ -142,27 +169,29 @@ function App() {
     setLastSearchTerm('')
     setSearchPage(1)
     setActiveSection('popular')
-    loadMovies(fetchPopularMovies)
+    loadPopularMovies()
   }
 
   function handleShowPopular() {
+    if (activeSection === 'popular' && !isSearchActive) return
     setSearchText('')
     setIsSearchActive(false)
     setLastSearchTerm('')
     setPopularPage(1)
     setActiveSection('popular')
     setSelectedMovie(null)
-    loadMovies(fetchPopularMovies)
+    loadPopularMovies()
   }
 
   function handleShowDiscover() {
+    if (activeSection === 'discover' && !isSearchActive) return
     setSearchText('')
     setIsSearchActive(false)
     setLastSearchTerm('')
     setPopularPage(1)
     setActiveSection('discover')
     setSelectedMovie(null)
-    loadMovies(fetchPopularMovies)
+    loadPopularMovies()
   }
 
   function handleShowWatchlist() {
@@ -261,6 +290,28 @@ function App() {
     }
   }
 
+  async function handleWatchTrailer() {
+    setIsTrailerOpen(true)
+    setIsTrailerLoading(true)
+    setTrailerUrl(null)
+    setTrailerError('')
+
+    try {
+      const url = await fetchMovieTrailer(FEATURED_MOVIE_ID)
+      setTrailerUrl(url)
+    } catch (error) {
+      setTrailerError(error instanceof Error ? error.message : 'We could not load the trailer. Please try again.')
+    } finally {
+      setIsTrailerLoading(false)
+    }
+  }
+
+  function handleCloseTrailer() {
+    setIsTrailerOpen(false)
+    setTrailerUrl(null)
+    setTrailerError('')
+  }
+
   function handleToggleWatchlist() {
     if (!selectedMovie) return
 
@@ -303,7 +354,7 @@ function App() {
         </div>
       ) : (
         <>
-          {activeSection === 'discover' && <Hero />}
+          {activeSection === 'discover' && <Hero onWatchTrailer={handleWatchTrailer} />}
           {activeSection === 'discover' && (
             <MovieSection
               id="trending"
@@ -312,6 +363,7 @@ function App() {
               isLoading={isTrendingLoading}
               errorMessage={trendingError}
               onSelect={handleSelectMovie}
+              onRetry={loadTrendingMovies}
             />
           )}
           {activeSection === 'discover' && (
@@ -370,6 +422,7 @@ function App() {
               genres={genres}
               isLoading={isGenresLoading}
               errorMessage={genresError}
+              onRetry={loadGenres}
               selectedGenreId={selectedGenre?.id ?? null}
               onSelectGenre={handleSelectGenre}
               onClearGenre={handleClearGenre}
@@ -380,12 +433,21 @@ function App() {
               genres={genres}
               isLoading={isGenresLoading}
               errorMessage={genresError}
+              onRetry={loadGenres}
               selectedGenreId={selectedGenre?.id ?? null}
               onSelectGenre={handleSelectGenre}
               onClearGenre={handleClearGenre}
             />
           )}
         </>
+      )}
+      {isTrailerOpen && (
+        <TrailerModal
+          trailerUrl={trailerUrl}
+          isLoading={isTrailerLoading}
+          errorMessage={trailerError}
+          onClose={handleCloseTrailer}
+        />
       )}
     </main>
   )

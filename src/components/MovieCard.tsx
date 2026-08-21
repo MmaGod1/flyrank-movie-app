@@ -31,7 +31,7 @@ function MovieCard({ movie, onSelect, onRemove }: MovieCardProps) {
       </div>
       </button>
       {onRemove && (
-        <button type="button" onClick={() => onRemove(movie)} aria-label={`Remove ${movie.title} from watchlist`} className="absolute right-2 top-2 rounded-full bg-[#090b12]/90 px-3 py-2 text-xs font-bold text-white opacity-0 transition group-hover:opacity-100 focus:opacity-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#f4b942]">
+        <button type="button" onClick={() => onRemove(movie)} aria-label={`Remove ${movie.title} from watchlist`} className="absolute right-2 top-2 rounded-full bg-[#090b12]/90 px-3 py-2 text-xs font-bold text-white transition sm:opacity-0 sm:group-hover:opacity-100 focus:opacity-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#f4b942]">
           Remove
         </button>
       )}

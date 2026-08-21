@@ -3,12 +3,15 @@ import type { ChangeEvent, FormEvent } from 'react'
 interface NavbarProps {
   searchText: string
   onSearchTextChange: (event: ChangeEvent<HTMLInputElement>) => void
+  onSearch: (query: string) => void
+  onClearSearch: () => void
 }
 
-function Navbar({ searchText, onSearchTextChange }: NavbarProps) {
+function Navbar({ searchText, onSearchTextChange, onSearch, onClearSearch }: NavbarProps) {
 
   function handleSearch(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
+    onSearch(searchText.trim())
   }
 
   return (
@@ -41,6 +44,11 @@ function Navbar({ searchText, onSearchTextChange }: NavbarProps) {
           Search
         </button>
       </form>
+      {searchText && (
+        <button type="button" onClick={onClearSearch} className="text-sm text-slate-400 transition hover:text-white">
+          Clear search
+        </button>
+      )}
     </nav>
   )
 }

@@ -1,3 +1,5 @@
+import { useState } from 'react'
+import type { ChangeEvent } from 'react'
 import Hero from './components/Hero'
 import MovieCard, { type Movie } from './components/MovieCard'
 import Navbar from './components/Navbar'
@@ -34,9 +36,17 @@ const popularMovies: Movie[] = [
 ]
 
 function App() {
+  const [searchText, setSearchText] = useState('')
+  const filteredMovies = popularMovies.filter((movie) =>
+    movie.title.toLowerCase().includes(searchText.toLowerCase()),
+  )
+
   return (
     <main className="min-h-screen bg-[#090b12] text-[#f5f7fb]">
-      <Navbar />
+      <Navbar
+        searchText={searchText}
+        onSearchTextChange={(event: ChangeEvent<HTMLInputElement>) => setSearchText(event.target.value)}
+      />
       <Hero />
 
       <section id="popular" className="mx-auto max-w-7xl px-6 pb-20 lg:px-10">
@@ -48,7 +58,11 @@ function App() {
           <button className="text-sm font-bold text-[#f4b942] transition hover:text-[#ffd166]">View all</button>
         </div>
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-          {popularMovies.map((movie) => <MovieCard key={movie.title} movie={movie} />)}
+          {filteredMovies.length > 0 ? (
+            filteredMovies.map((movie) => <MovieCard key={movie.title} movie={movie} />)
+          ) : (
+            <p className="col-span-full text-center text-slate-400">No movies found</p>
+          )}
         </div>
       </section>
     </main>

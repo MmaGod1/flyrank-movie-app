@@ -1,9 +1,13 @@
-import { useState } from 'react'
+import type { ChangeEvent, FormEvent } from 'react'
 
-function Navbar() {
-  const [searchText, setSearchText] = useState('')
+interface NavbarProps {
+  searchText: string
+  onSearchTextChange: (event: ChangeEvent<HTMLInputElement>) => void
+}
 
-  function handleSearch(event: React.FormEvent<HTMLFormElement>) {
+function Navbar({ searchText, onSearchTextChange }: NavbarProps) {
+
+  function handleSearch(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
   }
 
@@ -23,13 +27,13 @@ function Navbar() {
         </button>
       </div>
 
-      <form onSubmit={handleSearch} className="flex w-full max-w-2xl mx-auto">
+      <form onSubmit={handleSearch} className="mx-auto flex w-full max-w-2xl">
         <label htmlFor="movie-search" className="sr-only">Search for a movie</label>
         <input
           id="movie-search"
           type="search"
           value={searchText}
-          onChange={(event) => setSearchText(event.target.value)}
+          onChange={onSearchTextChange}
           placeholder="Search for a movie..."
           className="min-w-0 flex-1 rounded-l-full border border-slate-700 bg-[#141722] px-5 py-3 text-sm text-white outline-none placeholder:text-slate-500 focus:border-[#f4b942]"
         />

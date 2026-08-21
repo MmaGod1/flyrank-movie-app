@@ -8,9 +8,10 @@ interface NavbarProps {
   onDiscover: () => void
   onPopular: () => void
   onWatchlist: () => void
+  watchlistCount: number
 }
 
-function Navbar({ searchText, onSearchTextChange, onSearch, onClearSearch, onDiscover, onPopular, onWatchlist }: NavbarProps) {
+function Navbar({ searchText, onSearchTextChange, onSearch, onClearSearch, onDiscover, onPopular, onWatchlist, watchlistCount }: NavbarProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
 
   function handleSearch(event: FormEvent<HTMLFormElement>) {
@@ -32,7 +33,7 @@ function Navbar({ searchText, onSearchTextChange, onSearch, onClearSearch, onDis
         <div className="hidden gap-8 text-sm text-slate-300 md:flex">
           <button type="button" onClick={onDiscover} className="text-white">Discover</button>
           <button type="button" onClick={onPopular} className="transition hover:text-white">Popular</button>
-          <button type="button" onClick={onWatchlist} className="transition hover:text-white">My watchlist</button>
+          <button type="button" onClick={onWatchlist} className="transition hover:text-white">My watchlist ({watchlistCount})</button>
         </div>
         <button type="button" onClick={() => setIsMenuOpen(!isMenuOpen)} className="text-sm text-slate-300 md:hidden" aria-expanded={isMenuOpen}>
           {isMenuOpen ? 'Close' : 'Menu'}
@@ -46,7 +47,7 @@ function Navbar({ searchText, onSearchTextChange, onSearch, onClearSearch, onDis
         <div className="flex w-full flex-col gap-3 border-t border-slate-800 pt-4 text-sm text-slate-300 md:hidden">
           <button type="button" onClick={() => handleNavigation(onDiscover)} className="text-left">Discover</button>
           <button type="button" onClick={() => handleNavigation(onPopular)} className="text-left">Popular</button>
-          <button type="button" onClick={() => handleNavigation(onWatchlist)} className="text-left">My watchlist</button>
+          <button type="button" onClick={() => handleNavigation(onWatchlist)} className="text-left">My watchlist ({watchlistCount})</button>
         </div>
       )}
 

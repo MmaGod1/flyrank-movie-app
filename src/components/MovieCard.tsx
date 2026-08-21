@@ -10,11 +10,13 @@ export interface Movie {
 interface MovieCardProps {
   movie: Movie
   onSelect: (movie: Movie) => void
+  onRemove?: (movie: Movie) => void
 }
 
-function MovieCard({ movie, onSelect }: MovieCardProps) {
+function MovieCard({ movie, onSelect, onRemove }: MovieCardProps) {
   return (
-    <button type="button" onClick={() => onSelect(movie)} className="group text-left">
+    <article className="group relative">
+      <button type="button" onClick={() => onSelect(movie)} aria-label={`View details for ${movie.title}`} className="w-full text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-[#f4b942] focus-visible:ring-offset-2 focus-visible:ring-offset-[#090b12]">
       {movie.image ? (
         <img src={movie.image} alt={`${movie.title} poster`} className="aspect-[2/3] w-full rounded-xl object-cover transition duration-300 group-hover:-translate-y-1" />
       ) : (
@@ -27,7 +29,13 @@ function MovieCard({ movie, onSelect }: MovieCardProps) {
         </div>
         <span className="rounded bg-[#20232d] px-2 py-1 text-xs font-bold text-[#f4b942]">{movie.rating}</span>
       </div>
-    </button>
+      </button>
+      {onRemove && (
+        <button type="button" onClick={() => onRemove(movie)} aria-label={`Remove ${movie.title} from watchlist`} className="absolute right-2 top-2 rounded-full bg-[#090b12]/90 px-3 py-2 text-xs font-bold text-white opacity-0 transition group-hover:opacity-100 focus:opacity-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#f4b942]">
+          Remove
+        </button>
+      )}
+    </article>
   )
 }
 

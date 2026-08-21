@@ -29,7 +29,7 @@ function MovieDetails({ movie, isInWatchlist, onBack, onToggleWatchlist }: Movie
           <p className="mt-4 text-slate-400">{movie.releaseDate}  |  {movie.genres.join(', ') || 'Movie'}  |  {movie.rating} rating</p>
           <p className="mt-6 max-w-2xl leading-8 text-slate-300">{movie.overview}</p>
           {movie.runtime && <p className="mt-4 text-sm text-slate-400">Runtime: {movie.runtime} minutes</p>}
-          <button type="button" onClick={onToggleWatchlist} className="mt-8 rounded-full bg-[#f4b942] px-6 py-3 font-bold text-[#15120b] transition hover:bg-[#ffd166]">
+          <button type="button" onClick={onToggleWatchlist} aria-pressed={isInWatchlist} className="mt-8 rounded-full bg-[#f4b942] px-6 py-3 font-bold text-[#15120b] transition hover:bg-[#ffd166] focus:outline-none focus-visible:ring-2 focus-visible:ring-white">
             {isInWatchlist ? 'Remove from watchlist' : 'Add to watchlist'}
           </button>
         </div>

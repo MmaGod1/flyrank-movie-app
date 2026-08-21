@@ -13,6 +13,14 @@ interface TmdbMovie {
 
 interface TmdbPopularResponse {
   results: TmdbMovie[]
+  page: number
+  total_pages: number
+}
+
+export interface MoviePage {
+  movies: Movie[]
+  page: number
+  totalPages: number
 }
 
 export interface MovieGenre {
@@ -35,7 +43,7 @@ function mapMovies(movies: TmdbMovie[]): Movie[] {
     }))
 }
 
-async function fetchMovies(endpoint: string): Promise<Movie[]> {
+async function fetchMoviesPage(endpoint: string): Promise<MoviePage> {
   const apiKey = import.meta.env.VITE_TMDB_API_KEY
 
   if (!apiKey || apiKey === 'your_tmdb_api_key_here') {
@@ -50,11 +58,24 @@ async function fetchMovies(endpoint: string): Promise<Movie[]> {
   }
 
   const data: TmdbPopularResponse = await response.json()
-  return mapMovies(data.results)
+  return {
+    movies: mapMovies(data.results),
+    page: data.page,
+    totalPages: data.total_pages,
+  }
+}
+
+async function fetchMovies(endpoint: string): Promise<Movie[]> {
+  const data = await fetchMoviesPage(endpoint)
+  return data.movies
 }
 
 export async function fetchPopularMovies(): Promise<Movie[]> {
   return fetchMovies('/movie/popular?page=1')
+}
+
+export async function fetchPopularMoviesPage(page: number): Promise<MoviePage> {
+  return fetchMoviesPage(`/movie/popular?page=${page}`)
 }
 
 export async function fetchTrendingMovies(): Promise<Movie[]> {
@@ -82,8 +103,16 @@ export async function fetchMoviesByGenre(genreId: number): Promise<Movie[]> {
   return fetchMovies(`/discover/movie?with_genres=${genreId}&sort_by=popularity.desc&page=1`)
 }
 
+export async function fetchMoviesByGenrePage(genreId: number, page: number): Promise<MoviePage> {
+  return fetchMoviesPage(`/discover/movie?with_genres=${genreId}&sort_by=popularity.desc&page=${page}`)
+}
+
 export async function searchMovies(query: string): Promise<Movie[]> {
   return fetchMovies(`/search/movie?query=${encodeURIComponent(query)}`)
+}
+
+export async function searchMoviesPage(query: string, page: number): Promise<MoviePage> {
+  return fetchMoviesPage(`/search/movie?query=${encodeURIComponent(query)}&page=${page}`)
 }
 
 export interface MovieDetails extends Movie {

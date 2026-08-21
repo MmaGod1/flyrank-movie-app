@@ -5,9 +5,12 @@ interface NavbarProps {
   onSearchTextChange: (event: ChangeEvent<HTMLInputElement>) => void
   onSearch: (query: string) => void
   onClearSearch: () => void
+  onDiscover: () => void
+  onPopular: () => void
+  onWatchlist: () => void
 }
 
-function Navbar({ searchText, onSearchTextChange, onSearch, onClearSearch }: NavbarProps) {
+function Navbar({ searchText, onSearchTextChange, onSearch, onClearSearch, onDiscover, onPopular, onWatchlist }: NavbarProps) {
 
   function handleSearch(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -21,9 +24,9 @@ function Navbar({ searchText, onSearchTextChange, onSearch, onClearSearch }: Nav
           FLY<span className="text-[#f4b942]">RANK</span>
         </a>
         <div className="hidden gap-8 text-sm text-slate-300 md:flex">
-          <a href="#top" className="text-white">Discover</a>
-          <a href="#popular" className="transition hover:text-white">Popular</a>
-          <a href="#watchlist" className="transition hover:text-white">My watchlist</a>
+          <a href="#top" onClick={onDiscover} className="text-white">Discover</a>
+          <a href="#popular" onClick={onPopular} className="transition hover:text-white">Popular</a>
+          <a href="#watchlist" onClick={onWatchlist} className="transition hover:text-white">My watchlist</a>
         </div>
         <button className="rounded-full border border-slate-700 px-4 py-2 text-sm font-medium transition hover:border-[#f4b942]">
           Sign in
